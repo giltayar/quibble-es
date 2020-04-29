@@ -15,9 +15,6 @@
   "files": [
     "src"
   ],
-  "publishConfig": {
-    "access": "restricted"
-  },
   "scripts": {
     "test": "npm run eslint && npm run test:mocha",
     "test:mocha": "mocha --loader=./src/quibble-esm.mjs --no-timeouts --exit 'test/unit/*.test.mjs'",
