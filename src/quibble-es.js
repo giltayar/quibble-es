@@ -8,8 +8,7 @@ const path = require('path')
  */
 module.exports = function quibble(modulePath, defaultExportReplacement, namedExportReplacements) {
   const callerFile = hackErrorStackToGetCallerFile()
-  if (!globalThis.__quibble)
-    globalThis.__quibble = {quibbledModules: new Map(), isReset: false, stubModuleGeneration: 1}
+  init()
 
   if (globalThis.__quibble.isReset) {
     globalThis.__quibble.isReset = false
@@ -24,13 +23,28 @@ module.exports = function quibble(modulePath, defaultExportReplacement, namedExp
   })
 }
 
-module.exports.reset = function reset() {
+module.exports.reset = function reset(hard) {
   if (!globalThis.__quibble) return
 
   globalThis.__quibble.isReset = true
+  if (hard) {
+    ignoredCallerFiles = new Set()
+  }
 }
 
-var ignoredCallerFiles = []
+let ignoredCallerFiles = new Set()
+
+module.exports.ignoreCallsFromThisFile = function ignoreCallsFromThisFile(file) {
+  if (file == null) {
+    file = hackErrorStackToGetCallerFile(false)
+  }
+  ignoredCallerFiles.add(file)
+}
+
+function init() {
+  if (!globalThis.__quibble)
+    globalThis.__quibble = {quibbledModules: new Map(), isReset: false, stubModuleGeneration: 1}
+}
 
 // Copied and modified for ESM from https://github.com/testdouble/quibble/blob/master/lib/quibble.js
 function hackErrorStackToGetCallerFile(includeGlobalIgnores) {
@@ -52,7 +66,7 @@ function hackErrorStackToGetCallerFile(includeGlobalIgnores) {
       .filter((f) => !!f)
       .map(convertUrlToPath)
       .filter((f) => path.isAbsolute(f))
-      .filter((f) => !includeGlobalIgnores || !ignoredCallerFiles.includes(f))
+      .filter((f) => !includeGlobalIgnores || !ignoredCallerFiles.has(f))
       .find((f) => f !== currentFile)
   } finally {
     Error.prepareStackTrace = originalFunc

@@ -1,8 +1,9 @@
-import * as quibble from './quibble-es.js'
+import quibble from './quibble-es.js'
 
 //@ts-ignore
-export default quibble.default
+export default quibble
 export const reset = quibble.reset
+export const ignoreCallsFromThisFile = quibble.ignoreCallsFromThisFile
 
 /**
  * @param {string} specifier

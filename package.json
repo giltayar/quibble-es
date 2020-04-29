@@ -1,6 +1,6 @@
 {
   "name": "@giltayar/quibble-es",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "quibble-like package (only) for Node.js ESM",
   "main": "./src/quibble-es.js",
   "exports": {
