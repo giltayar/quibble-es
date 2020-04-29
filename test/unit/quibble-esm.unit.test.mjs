@@ -1,4 +1,4 @@
-import quibble from '../../src/quibble-es.js'
+import quibble from '../../src/quibble-esm.mjs'
 import mocha from 'mocha'
 import chai from 'chai'
 import chaiSubset from 'chai-subset'
@@ -7,7 +7,7 @@ const {describe, it, afterEach} = mocha
 const {expect, use} = chai
 use(chaiSubset)
 
-describe('quibble', function () {
+describe('quibble esm (unit)', function () {
   afterEach(() => quibble.reset())
 
   it('should mock a module', async () => {
@@ -18,7 +18,7 @@ describe('quibble', function () {
     })
 
     const result = await import('./a-module.mjs')
-    expect(result).to.containSubset({
+    expect({...result}).to.containSubset({
       default: 'default-export-replacement',
       namedExport: 'replacement',
       life: 41,

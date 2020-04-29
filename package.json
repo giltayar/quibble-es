@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "test": "npm run eslint && npm run test:mocha",
-    "test:mocha": "mocha --loader=./src/quibble-esm.mjs --no-timeouts --exit 'test/unit/*.test.mjs'",
+    "test:mocha": "mocha --loader=./src/quibble-esm.mjs --no-timeouts --exit 'test/unit/*.test.{mjs,js}'",
     "eslint": "eslint '**/*.js' '**/*.mjs'"
   },
   "keywords": [
