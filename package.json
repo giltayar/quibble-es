@@ -1,0 +1,49 @@
+{
+  "name": "@giltayar/quibble-es",
+  "version": "1.0.0",
+  "description": "quibble-like package (only) for Node.js ESM",
+  "main": "./src/quibble-es.js",
+  "exports": {
+    ".": {
+      "import": "./src/quibble-esm.mjs",
+      "require": "./src/quibble-es.js"
+    }
+  },
+  "engines": {
+    "node": ">=13.0.0"
+  },
+  "files": [
+    "src"
+  ],
+  "publishConfig": {
+    "access": "restricted"
+  },
+  "scripts": {
+    "test": "npm run eslint && npm run test:mocha",
+    "test:mocha": "mocha --loader=./src/quibble-esm.mjs --no-timeouts --exit 'test/unit/*.test.mjs'",
+    "eslint": "eslint '**/*.js' '**/*.mjs'"
+  },
+  "keywords": [
+    "mocking",
+    "testing"
+  ],
+  "author": "Gil Tayar <gil@tayar.org>",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/giltayar/quibble-es",
+    "type": "git"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^13.13.4",
+    "babel-eslint": "^10.1.0",
+    "chai": "^4.2.0",
+    "chai-subset": "^1.6.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-mocha-no-only": "^1.1.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.1.3",
+    "mocha": "^7.1.2",
+    "prettier": "^2.0.5"
+  }
+}
