@@ -6,16 +6,23 @@ const path = require('path')
  * @param {any} defaultExportReplacement
  * @param {{[x: string]: any}} namedExportReplacements
  */
-module.exports = function quibble(modulePath, defaultExportReplacement, namedExportReplacements) {
+module.exports = async function quibble(
+  modulePath,
+  defaultExportReplacement,
+  namedExportReplacements,
+) {
   const callerFile = hackErrorStackToGetCallerFile()
-  init()
+  if (!globalThis.__quibble)
+    globalThis.__quibble = {quibbledModules: new Map(), stubModuleGeneration: 1}
 
-  if (globalThis.__quibble.isReset) {
-    globalThis.__quibble.isReset = false
+  if (!globalThis.__quibble.quibbledModules) {
+    globalThis.__quibble.quibbledModules = new Map()
     ++globalThis.__quibble.stubModuleGeneration
   }
 
-  const fullModulePath = path.resolve(path.dirname(callerFile), modulePath)
+  const fullModulePath = isBareSpecifier(modulePath)
+    ? await dummyImportModuleToGetAtPath(modulePath)
+    : path.resolve(path.dirname(callerFile), modulePath)
 
   globalThis.__quibble.quibbledModules.set(fullModulePath, {
     defaultExportReplacement,
@@ -23,10 +30,49 @@ module.exports = function quibble(modulePath, defaultExportReplacement, namedExp
   })
 }
 
+async function dummyImportModuleToGetAtPath(modulePath) {
+  try {
+    await import(modulePath + (modulePath.includes('?') ? '&' : '?') + '__quibbleresolvepath')
+  } catch (error) {
+    if (error.code === 'QUIBBLE_RESOLVED_PATH') {
+      return error.resolvedPath
+    } else {
+      throw error
+    }
+  }
+
+  throw new Error(
+    'Node.js is not running with the Quibble loader. Run node with "--loader=quibble"',
+  )
+}
+
+function isBareSpecifier(modulePath) {
+  const firstLetter = modulePath[0]
+  if (firstLetter === '.' || firstLetter === '/') {
+    return false
+  }
+
+  if (!modulePath.includes(':')) {
+    return true
+  }
+
+  try {
+    new URL(modulePath)
+  } catch (error) {
+    if (error.code === 'ERR_INVALID_URL') {
+      return false
+    } else {
+      throw error
+    }
+  }
+
+  return true
+}
+
 module.exports.reset = function reset(hard) {
   if (!globalThis.__quibble) return
 
-  globalThis.__quibble.isReset = true
+  delete globalThis.__quibble.quibbledModules
   if (hard) {
     ignoredCallerFiles = new Set()
   }
@@ -39,11 +85,6 @@ module.exports.ignoreCallsFromThisFile = function ignoreCallsFromThisFile(file) 
     file = hackErrorStackToGetCallerFile(false)
   }
   ignoredCallerFiles.add(file)
-}
-
-function init() {
-  if (!globalThis.__quibble)
-    globalThis.__quibble = {quibbledModules: new Map(), isReset: false, stubModuleGeneration: 1}
 }
 
 // Copied and modified for ESM from https://github.com/testdouble/quibble/blob/master/lib/quibble.js

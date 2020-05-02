@@ -112,4 +112,13 @@ describe('quibble esm (unit)', function () {
     })
     expect(result.namedFunctionExport()).to.equal('export replacement 2')
   })
+
+  it('should mock bare-specifier modules', async () => {
+    quibble('is-promise', 42)
+
+    const {default: defaultExport, ...named} = await import('is-promise')
+
+    expect(defaultExport).to.equal(42)
+    expect(named).to.eql({})
+  })
 })

@@ -14,17 +14,28 @@ export const ignoreCallsFromThisFile = quibble.ignoreCallsFromThisFile
  * @returns {Promise<{url: string}>}
  */
 export async function resolve(specifier, context, defaultResolve) {
-  const {parentURL = null} = context
+  const resolveResult = await defaultResolve(
+    specifier.replace('?__quibbleresolvepath', ''),
+    context,
+    defaultResolve,
+  )
 
-  if (!globalThis.__quibble || globalThis.__quibble.isReset)
-    return defaultResolve(specifier, context, defaultResolve)
+  if (specifier.includes('__quibbleresolvepath')) {
+    const resolvedPath = new URL(resolveResult.url).pathname
+    const error = new Error()
+    error.code = 'QUIBBLE_RESOLVED_PATH'
+    error.resolvedPath = resolvedPath
+    throw error
+  }
+
+  if (!globalThis.__quibble || !globalThis.__quibble.quibbledModules) {
+    return resolveResult
+  }
 
   const stubModuleGeneration = globalThis.__quibble.stubModuleGeneration
 
   return {
-    url: parentURL
-      ? `${new URL(specifier, parentURL).href}?__quibble=${stubModuleGeneration}`
-      : new URL(specifier).href,
+    url: `${resolveResult.url}?__quibble=${stubModuleGeneration}`,
   }
 }
 
@@ -73,7 +84,7 @@ function getStubsInfo(moduleUrl) {
  */
 function transformModuleSource([moduleKey, stubs]) {
   return `
-${Object.keys(stubs.namedExportReplacements)
+${Object.keys(stubs.namedExportReplacements || {})
   .map(
     (name) =>
       `export let ${name} = globalThis.__quibble.quibbledModules.get(${JSON.stringify(
