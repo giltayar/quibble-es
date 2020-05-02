@@ -4,6 +4,7 @@ import quibble from './quibble-es.js'
 export default quibble
 export const reset = quibble.reset
 export const ignoreCallsFromThisFile = quibble.ignoreCallsFromThisFile
+export const esmImportWithPath = quibble.esmImportWithPath
 
 /**
  * @param {string} specifier
@@ -15,11 +16,12 @@ export const ignoreCallsFromThisFile = quibble.ignoreCallsFromThisFile
  */
 export async function resolve(specifier, context, defaultResolve) {
   const resolveResult = await defaultResolve(
-    specifier.replace('?__quibbleresolvepath', ''),
+    specifier.includes('__quibble')
+      ? specifier.replace('?__quibbleresolvepath', '').replace('?__quibbleoriginal', '')
+      : specifier,
     context,
     defaultResolve,
   )
-
   if (specifier.includes('__quibbleresolvepath')) {
     const resolvedPath = new URL(resolveResult.url).pathname
     const error = new Error()
@@ -34,9 +36,11 @@ export async function resolve(specifier, context, defaultResolve) {
 
   const stubModuleGeneration = globalThis.__quibble.stubModuleGeneration
 
-  return {
-    url: `${resolveResult.url}?__quibble=${stubModuleGeneration}`,
+  if (specifier.includes('__quibbleoriginal')) {
+    return resolveResult
   }
+
+  return {url: `${resolveResult.url}?__quibble=${stubModuleGeneration}`}
 }
 
 /**

@@ -30,6 +30,41 @@ module.exports = async function quibble(
   })
 }
 
+module.exports.esmImportWithPath = async function esmImportWithPath(importPath) {
+  const callerFile = hackErrorStackToGetCallerFile()
+  const importPathIsBareSpecifier = isBareSpecifier(importPath)
+
+  const modulePath = importPathIsBareSpecifier
+    ? await dummyImportModuleToGetAtPath(importPath)
+    : path.resolve(path.dirname(callerFile), importPath)
+
+  const fullImportPath = importPathIsBareSpecifier
+    ? importPath
+    : path.resolve(path.dirname(callerFile), importPath)
+  return {
+    modulePath,
+    module: await import(fullImportPath + '?__quibbleoriginal'),
+  }
+}
+
+module.exports.reset = function reset(hard) {
+  if (!globalThis.__quibble) return
+
+  delete globalThis.__quibble.quibbledModules
+  if (hard) {
+    ignoredCallerFiles = new Set()
+  }
+}
+
+let ignoredCallerFiles = new Set()
+
+module.exports.ignoreCallsFromThisFile = function ignoreCallsFromThisFile(file) {
+  if (file == null) {
+    file = hackErrorStackToGetCallerFile(false)
+  }
+  ignoredCallerFiles.add(file)
+}
+
 async function dummyImportModuleToGetAtPath(modulePath) {
   try {
     await import(modulePath + (modulePath.includes('?') ? '&' : '?') + '__quibbleresolvepath')
@@ -67,24 +102,6 @@ function isBareSpecifier(modulePath) {
   }
 
   return true
-}
-
-module.exports.reset = function reset(hard) {
-  if (!globalThis.__quibble) return
-
-  delete globalThis.__quibble.quibbledModules
-  if (hard) {
-    ignoredCallerFiles = new Set()
-  }
-}
-
-let ignoredCallerFiles = new Set()
-
-module.exports.ignoreCallsFromThisFile = function ignoreCallsFromThisFile(file) {
-  if (file == null) {
-    file = hackErrorStackToGetCallerFile(false)
-  }
-  ignoredCallerFiles.add(file)
 }
 
 // Copied and modified for ESM from https://github.com/testdouble/quibble/blob/master/lib/quibble.js
